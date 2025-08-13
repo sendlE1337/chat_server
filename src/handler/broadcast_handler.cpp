@@ -1,3 +1,7 @@
+/**
+ * @file broadcast_handler.cpp
+ * @brief Реализация методов BroadcastHandler
+ */
 #include "../include/handler/broadcast_handler.h"
 #include <iostream>
 

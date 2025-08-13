@@ -1,6 +1,9 @@
 #include "../include/net/socket.h"
 #include <utility>
 
+/**
+ * @throws runtime_error В случае ошибок конфигурации или неудачи при создании сокета
+ */
 Socket::Socket(int domain, int type, int protocol) : config_(domain, type, protocol)
 {
   if (!config_.isValid())
@@ -15,6 +18,10 @@ Socket::Socket(int domain, int type, int protocol) : config_(domain, type, proto
     throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
   }
 }
+
+/**
+ * @throws runtime_error Если дескриптор неверен
+ */
 Socket::Socket(int fd) : fd_(fd)
 {
   if (fd_ == -1)
@@ -29,8 +36,8 @@ Socket::~Socket()
 Socket::Socket(Socket &&other) noexcept
     : fd_(std::exchange(other.fd_, -1)), servaddr(other.servaddr), servaddr6(other.servaddr6), config_(std::move(other.config_))
 {
-  memset(&other.servaddr, 0, sizeof(other.servaddr));
-  memset(&other.servaddr6, 0, sizeof(other.servaddr6));
+  memset(&other.servaddr, 0, sizeof(other.servaddr));   // Обнуляем старое содержимое
+  memset(&other.servaddr6, 0, sizeof(other.servaddr6)); // Обнуляем старое содержимое
 }
 Socket &Socket::operator=(Socket &&other) noexcept
 {
@@ -38,20 +45,23 @@ Socket &Socket::operator=(Socket &&other) noexcept
   {
     if (fd_ != -1)
     {
-      close(fd_);
+      close(fd_); // Закрываем старый сокет
     }
 
-    fd_ = std::exchange(other.fd_, -1);
-    servaddr = other.servaddr;
-    servaddr6 = other.servaddr6;
-    config_ = std::move(other.config_);
+    fd_ = std::exchange(other.fd_, -1); // Меняем дескрипторы
+    servaddr = other.servaddr;          // Копируем адрес IPv4
+    servaddr6 = other.servaddr6;        // Копируем адрес IPv6
+    config_ = std::move(other.config_); // Перемещаем конфигурацию
 
-    memset(&other.servaddr, 0, sizeof(other.servaddr));
-    memset(&other.servaddr6, 0, sizeof(other.servaddr6));
+    memset(&other.servaddr, 0, sizeof(other.servaddr));   // Обнуляем старое содержимое
+    memset(&other.servaddr6, 0, sizeof(other.servaddr6)); // Обнуляем старое содержимое
   }
   return *this;
 }
 
+/**
+ * @throws runtime_error Если сокет не действителен или операция bind завершилась ошибкой
+ */
 void Socket::bind_socket()
 {
   if (!is_valid())
@@ -77,6 +87,10 @@ void Socket::bind_socket()
     }
   }
 }
+
+/**
+ * @throws runtime_error Если сокет не действителен или произошла ошибка слушания
+ */
 void Socket::listen_socket(int backlog)
 {
   if (!is_valid())
@@ -95,6 +109,10 @@ void Socket::listen_socket(int backlog)
     throw std::runtime_error(std::string("listen failed: ") + strerror(errno));
   }
 }
+
+/**
+ * @throws runtime_error Если сокет не действителен или произошло отклонение соединения
+ */
 Socket Socket::accept_socket(struct sockaddr *addr, socklen_t *addrlen)
 {
   if (!is_valid())
@@ -115,6 +133,10 @@ Socket Socket::accept_socket(struct sockaddr *addr, socklen_t *addrlen)
 
   return Socket(connfd);
 }
+
+/**
+ * @throws runtime_error Если сокет не действителен или попытка подключения завершилась ошибкой
+ */
 void Socket::connect_socket()
 {
   if (!is_valid())
@@ -143,9 +165,10 @@ void Socket::connect_socket()
     throw std::runtime_error("Unsupported address family");
   }
 }
-// size_t Socket::send(const void *data, size_t size) {}
-// size_t Socket::recv(void *buffer, size_t size) {}
 
+/**
+ * @throws runtime_error Если указанный адрес некорректен или поддерживается неподдерживаемое семейство адресов
+ */
 void Socket::universal_struct_parameters(const std::string address, int port)
 {
   if (!is_valid())
@@ -184,6 +207,9 @@ void Socket::universal_struct_parameters(const std::string address, int port)
   }
 }
 
+/**
+ * @return Количество полученных байт или -1 в случае ошибки
+ */
 ssize_t Socket::recv(std::string &buffer)
 {
   if (fd_ == -1)
@@ -192,19 +218,22 @@ ssize_t Socket::recv(std::string &buffer)
     return -1;
   }
 
-  char buf[1024];
-  ssize_t bytes = ::recv(fd_, buf, sizeof(buf), 0);
+  char buf[1024];                                   // Временный буфер для приёма данных
+  ssize_t bytes = ::recv(fd_, buf, sizeof(buf), 0); // Получаем данные
 
   if (bytes > 0)
   {
-    buffer.clear(); // Очищаем буфер перед записью
-    buffer.assign(buf, bytes);
+    buffer.clear();            // Очистка буфера перед записью новых данных
+    buffer.assign(buf, bytes); // Добавляем полученные данные в буфер
   }
   // bytes == 0 — соединение закрыто, errno не трогаем
   // bytes < 0 — ошибка, errno уже установлен системой
   return bytes;
 }
 
+/**
+ * @return Количество отправленных байт или -1 в случае ошибки
+ */
 ssize_t Socket::send(const std::string &message)
 {
   if (fd_ == -1)
@@ -213,13 +242,13 @@ ssize_t Socket::send(const std::string &message)
     return -1;
   }
 
-  ssize_t sent = ::send(fd_, message.data(), message.size(), MSG_NOSIGNAL);
+  ssize_t sent = ::send(fd_, message.data(), message.size(), MSG_NOSIGNAL); // Отправляем данные
 
   if (sent == -1)
   {
     if (errno == EAGAIN || errno == EWOULDBLOCK)
     {
-      errno = EAGAIN; // Явно указываем, что отправка заблокирована
+      errno = EAGAIN; // Явно устанавливаем ошибку блокировки
     }
   }
   return sent;
@@ -230,8 +259,8 @@ void Socket::shutdown()
 
   if (fd_ != -1)
   {
-    ::shutdown(fd_, SHUT_RDWR);
-    close(fd_);
-    fd_ = -1;
+    ::shutdown(fd_, SHUT_RDWR); // Прекращаем ввод-вывод
+    close(fd_);                 // Закрываем сокет
+    fd_ = -1;                   // Отмечаем сокет как закрытый
   }
 }

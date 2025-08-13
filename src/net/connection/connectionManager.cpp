@@ -1,3 +1,8 @@
+/**
+ * @file connectionManager.cpp
+ * @brief Реализация методов connectionManager
+ */
+
 #include <string>
 #include <iostream>
 #include <algorithm>
@@ -6,9 +11,11 @@
 connectionManager::connectionManager(int domain, int type, int protocol, std::unique_ptr<IMessageHandler> handler) : serverSocket_(domain, type, protocol), handler_(std::move(handler)) {}
 connectionManager::~connectionManager()
 {
+  // Остановка потока accept
   if (thread_accept_.joinable())
     thread_accept_.join();
 
+  // Остановка клиентских потоков
   for (auto &t : thread_connection_clients_)
   {
     if (t.joinable())
@@ -22,6 +29,7 @@ void connectionManager::start(const std::string &ip, const int port)
   serverSocket_.bind_socket();
   serverSocket_.listen_socket(5);
 
+  // Запуск потока для приема подключений
   thread_accept_ = std::thread(&connectionManager::acceptClients, this);
 }
 void connectionManager::acceptClients()

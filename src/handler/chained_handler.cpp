@@ -1,3 +1,8 @@
+/**
+ * @file chained_handler.cpp
+ * @brief Реализация методов ChainedHandler
+ */
+
 #include "../include/handler/chained_handler.h"
 
 void ChainedHandler::add(std::unique_ptr<IMessageHandler> handler)
