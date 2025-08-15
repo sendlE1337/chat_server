@@ -16,7 +16,7 @@
 
 /**
  * @class connectionManager
- * @brief Реализация менеджера подключений с пулом потоков
+ * @brief Реализация менеджера подключений
  *
  * @details Особенности:
  * - Принимает новые подключения в отдельном потоке
@@ -88,8 +88,8 @@ private:
   std::unique_ptr<IMessageHandler> handler_;           ///< Обработчик сообщений
   std::vector<std::thread> thread_connection_clients_; ///< Потоки клиентов
   std::mutex clientsMutex_;                            ///< Мьютекс для доступа к клиентам
-  std::atomic<bool> running_;
-  ClientsContainer active_clients_; ///< Активные подключения
+  std::atomic<bool> running_;                          ///< атомарная переменная для коррекнтого завершения работы
+  ClientsContainer active_clients_;                    ///< Активные подключения
 
   /**
    * @brief Цикл принятия новых подключений
