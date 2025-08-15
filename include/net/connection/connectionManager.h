@@ -9,9 +9,10 @@
 #include <thread>
 #include <mutex>
 #include <memory>
+#include <atomic>
 #include "../include/net/socket.h"
 #include "IConnectionManager.h"
-#include "../include/handler/imessage_handler.h"
+#include "../include/handler/Messages/interface/imessage_handler.h"
 
 /**
  * @class connectionManager
@@ -45,14 +46,17 @@ public:
    * @note Останавливает все потоки и закрывает соединения
    */
   ~connectionManager();
-  void start(const std::string &ip, const int port);
-
+  void start(const std::string &ip, const int port) override;
+  void stop() override;
   /**
    * @brief Получить список активных клиентов
    * @return Ссылка на контейнер клиентов
    * @warning Не потокобезопасно! Используйте get_clients_mutex()
    */
-  ClientsContainer &get_clients() { return active_clients_; }
+  ClientsContainer &get_clients()
+  {
+    return active_clients_;
+  }
 
   /**
    * @brief Получить мьютекс для работы с клиентами
@@ -84,7 +88,8 @@ private:
   std::unique_ptr<IMessageHandler> handler_;           ///< Обработчик сообщений
   std::vector<std::thread> thread_connection_clients_; ///< Потоки клиентов
   std::mutex clientsMutex_;                            ///< Мьютекс для доступа к клиентам
-  ClientsContainer active_clients_;                    ///< Активные подключения
+  std::atomic<bool> running_;
+  ClientsContainer active_clients_; ///< Активные подключения
 
   /**
    * @brief Цикл принятия новых подключений

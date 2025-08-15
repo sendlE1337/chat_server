@@ -2,7 +2,7 @@
  * @file broadcast_handler.cpp
  * @brief Реализация методов BroadcastHandler
  */
-#include "../include/handler/broadcast_handler.h"
+#include "../include/handler/Messages/implementations/broadcast_handler.h"
 #include <iostream>
 
 BroadcastHandler::BroadcastHandler(ClientContainer &clients, std::mutex &mutex)
@@ -10,6 +10,9 @@ BroadcastHandler::BroadcastHandler(ClientContainer &clients, std::mutex &mutex)
 
 bool BroadcastHandler::handle(std::shared_ptr<Socket> sender, const std::string &msg)
 {
+  if (msg.empty())
+    return false;
+
   std::lock_guard<std::mutex> lock(mutex_);
 
   for (auto &client : clients_)

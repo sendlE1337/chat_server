@@ -11,3 +11,11 @@ void ChatServer::start(const std::string &ip, const int port)
 {
   manager_->start(ip, port);
 }
+
+void ChatServer::stop()
+{
+  if (manager_)
+  {
+    manager_->stop();
+  }
+}

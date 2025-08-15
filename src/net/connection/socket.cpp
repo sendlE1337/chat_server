@@ -12,7 +12,7 @@ Socket::Socket(int domain, int type, int protocol) : config_(domain, type, proto
   }
   fd_ = socket(domain, type, protocol);
   int yes = 1;
-  if (setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
+  if (setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes))) // Помогает перезапустить сервер после падения(без тайм аутов)
   {
     close(fd_);
     throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
@@ -256,7 +256,6 @@ ssize_t Socket::send(const std::string &message)
 
 void Socket::shutdown()
 {
-
   if (fd_ != -1)
   {
     ::shutdown(fd_, SHUT_RDWR); // Прекращаем ввод-вывод

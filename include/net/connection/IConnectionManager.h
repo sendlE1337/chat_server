@@ -31,6 +31,6 @@ public:
    * @brief Виртуальный деструктор
    * @note Гарантирует корректное удаление производных классов
    */
-
+  virtual void stop() = 0;
   virtual ~IConnectionManager() = default;
 };

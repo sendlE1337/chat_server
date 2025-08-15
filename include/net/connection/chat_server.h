@@ -34,6 +34,11 @@ public:
    */
   void start(const std::string &ip, const int port);
 
+  /**
+   * @brief Остановка сервера
+   */
+  void stop();
+
 private:
   std::unique_ptr<IConnectionManager> manager_; ///< Владелец менеджера подключений
 };
