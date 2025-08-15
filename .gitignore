@@ -1,3 +1,15 @@
 .vscode/
 *.chat_server
 build/
+/docs/
+!/docs/Doxyfile  # Исключение - сам конфиг сохраняем
+
+# Автоматически сгенерированные файлы
+*.aux
+*.toc
+*.log
+*.idx
+*.ind
+*.ilg
+*.out
+*.dvi
